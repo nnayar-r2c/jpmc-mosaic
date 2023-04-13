@@ -235,23 +235,17 @@ const SidebarPlugin: PluginType<SidebarPluginPage, SidebarPluginOptions, Sidebar
         return pagesByPriority;
       }
 
-      function groupBy(arr, prop) {
-        const map = new Map(Array.from(arr, obj => [obj[prop], []]));
-        arr.forEach(obj => map.get(obj[prop]).push(obj));
-        return Array.from(map.values());
-      }
-
       function groupedPages(pages) {
         return pages.reduce((groups, page) => {
           const parentDir = page.route.substring(0, page.route.lastIndexOf('/'));
           page = { ...page, parentDir };
-          console.log(groups);
-          groups[0] = {
-            ...groups[0],
-            ...page
-          };
+          if (!groups[parentDir]) {
+            groups[parentDir] = [page];
+          } else {
+            groups[parentDir] = [...groups[parentDir], page];
+          }
           return groups;
-        });
+        }, {});
       }
 
       await Promise.all(
@@ -259,6 +253,7 @@ const SidebarPlugin: PluginType<SidebarPluginPage, SidebarPluginOptions, Sidebar
           const sidebarFilePath = path.posix.join(String(rootDir), filename);
           let pages = await createPageList(rootDir);
           pages = pages.filter(page => removeExcludedPages(page));
+          console.log(groupedPages(pages));
           const groupMap = createGroupMap(pages);
           const sidebarData = linkGroupMap(groupMap, rootDir);
           const pagesByPriority = sortPagesByPriority(sidebarData);
